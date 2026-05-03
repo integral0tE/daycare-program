@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>デイケア プログラム</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+      background: #f0f4f8;
+      color: #2d3748;
+      min-height: 100vh;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    /* ── ヘッダー ── */
+    .header {
+      background: linear-gradient(135deg, #5b8dd9, #3a6fc1);
+      color: white;
+      padding: 14px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+    .header h1 { font-size: 17px; font-weight: 700; letter-spacing: 0.3px; }
+    .settings-btn {
+      background: rgba(255,255,255,0.2);
+      border: none;
+      color: white;
+      border-radius: 8px;
+      padding: 7px 12px;
+      font-size: 13px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .settings-btn:active { opacity: 0.7; }
+
+    /* ── API キーモーダル ── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 300;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal {
+      background: white;
+      border-radius: 18px;
+      padding: 24px;
+      width: 88%;
+      max-width: 380px;
+    }
+    .modal h2 { font-size: 16px; margin-bottom: 6px; }
+    .modal p { font-size: 13px; color: #718096; margin-bottom: 14px; }
+    .modal input {
+      width: 100%;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 11px 12px;
+      font-size: 14px;
+      margin-bottom: 14px;
+      outline: none;
+    }
+    .modal input:focus { border-color: #5b8dd9; }
+    .modal-buttons { display: flex; gap: 10px; }
+    .btn-primary {
+      flex: 1; background: #5b8dd9; color: white; border: none;
+      border-radius: 10px; padding: 11px; font-size: 14px;
+      font-weight: 700; cursor: pointer;
+    }
+    .btn-secondary {
+      flex: 1; background: #edf2f7; color: #4a5568; border: none;
+      border-radius: 10px; padding: 11px; font-size: 14px;
+      font-weight: 600; cursor: pointer;
+    }
+
+    /* ── タブバー ── */
+    .tab-bar {
+      display: flex;
+      background: white;
+      border-bottom: 1px solid #e2e8f0;
+      position: sticky;
+      top: 53px;
+      z-index: 90;
+    }
+    .tab-btn {
+      flex: 1; padding: 11px 4px; text-align: center;
+      font-size: 12px; color: #718096; cursor: pointer;
+      border: none; background: none;
+      border-bottom: 3px solid transparent;
+      font-weight: 500; transition: color 0.15s;
+    }
+    .tab-btn.active { color: #5b8dd9; border-bottom-color: #5b8dd9; font-weight: 700; }
+
+    .tab-panel { display: none; padding-bottom: 40px; }
+    .tab-panel.active { display: block; }
+
+    /* ─────────────────────────────
+       TAB 1: 作業リスト
+    ───────────────────────────── */
+    .filters {
+      background: white;
+      padding: 12px 14px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .filter-label {
+      font-size: 10px; color: #a0aec0; font-weight: 700;
+      letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 7px;
+    }
+    .filter-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+    .chip {
+      padding: 5px 13px; border-radius: 20px; font-size: 12px;
+      cursor: pointer; border: 1.5px solid #e2e8f0; background: white;
+      color: #4a5568; font-weight: 500; transition: all 0.15s;
+      user-select: none;
+    }
+    .chip.active { color: white; border-color: transparent; }
+    .chip[data-cat="すべて"].active      { background: #5b8dd9; }
+    .chip[data-cat="清掃・整理"].active  { background: #38a169; }
+    .chip[data-cat="書類・事務"].active  { background: #3182ce; }
+    .chip[data-cat="備品・道具"].active  { background: #dd6b20; }
+    .chip[data-cat="制作・クラフト"].active { background: #d53f8c; }
+    .chip[data-cat="PC作業"].active      { background: #805ad5; }
+
+    .toggle-row { display: flex; gap: 6px; }
+    .toggle-btn {
+      padding: 5px 14px; border-radius: 20px; font-size: 12px;
+      cursor: pointer; border: 1.5px solid #e2e8f0; background: white;
+      color: #4a5568; font-weight: 500; transition: all 0.15s;
+      user-select: none;
+    }
+    .toggle-btn.active { background: #5b8dd9; color: white; border-color: #5b8dd9; }
+
+    .task-list { padding: 8px 8px 0; }
+    .task-count {
+      font-size: 12px; color: #a0aec0; padding: 6px 6px 2px;
+      text-align: right; font-weight: 600;
+    }
+    .task-card {
+      background: white; border-radius: 14px; padding: 14px 16px;
+      margin-bottom: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    }
+    .task-name { font-size: 15px; font-weight: 600; color: #2d3748; margin-bottom: 9px; }
+    .task-badges { display: flex; gap: 6px; flex-wrap: wrap; }
+    .badge { padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+    .badge-清掃・整理  { background: #f0fff4; color: #276749; }
+    .badge-書類・事務  { background: #ebf8ff; color: #2b6cb0; }
+    .badge-備品・道具  { background: #fffaf0; color: #c05621; }
+    .badge-制作・クラフト { background: #fff5f7; color: #97266d; }
+    .badge-PC作業      { background: #faf5ff; color: #553c9a; }
+    .badge-全員   { background: #e6fffa; color: #234e52; }
+    .badge-少人数 { background: #fffbeb; color: #7c4d00; }
+    .task-note { font-size: 12px; color: #e53e3e; margin-top: 7px; font-weight: 500; }
+    .no-results {
+      text-align: center; padding: 48px 20px; color: #a0aec0; font-size: 14px;
+    }
+
+    /* ─────────────────────────────
+       TAB 2: 壁面装飾
+    ───────────────────────────── */
+    .deco-section { padding: 20px 16px; }
+    .section-title { font-size: 17px; font-weight: 700; color: #2d3748; margin-bottom: 5px; }
+    .section-desc  { font-size: 13px; color: #718096; margin-bottom: 20px; line-height: 1.5; }
+
+    .season-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;
+    }
+    .season-btn {
+      padding: 22px 12px; border-radius: 18px; border: none;
+      font-size: 22px; font-weight: 800; cursor: pointer;
+      display: flex; flex-direction: column; align-items: center; gap: 5px;
+      transition: transform 0.12s, box-shadow 0.12s;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      user-select: none;
+    }
+    .season-btn:active { transform: scale(0.95); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .season-label { font-size: 15px; font-weight: 700; }
+    .season-btn.spring { background: linear-gradient(135deg, #fce4ec, #f8bbd9); color: #880e4f; }
+    .season-btn.summer { background: linear-gradient(135deg, #e0f7fa, #b2ebf2); color: #006064; }
+    .season-btn.autumn { background: linear-gradient(135deg, #fff8e1, #ffe0b2); color: #e65100; }
+    .season-btn.winter { background: linear-gradient(135deg, #e3f2fd, #bbdefb); color: #0d47a1; }
+
+    .slot-box {
+      background: white; border-radius: 18px; padding: 28px 20px;
+      text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.09);
+      min-height: 130px; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 8px;
+    }
+    .slot-idle    { color: #c0ccd8; font-size: 14px; }
+    .slot-cycling { font-size: 20px; font-weight: 700; color: #5b8dd9; min-height: 32px; }
+    .slot-result  { font-size: 24px; font-weight: 800; color: #2d3748; line-height: 1.3; }
+    .slot-sub     { font-size: 13px; color: #a0aec0; }
+    .retry-btn {
+      margin-top: 4px; background: #5b8dd9; color: white;
+      border: none; border-radius: 12px; padding: 10px 26px;
+      font-size: 14px; font-weight: 700; cursor: pointer;
+    }
+    .retry-btn:active { opacity: 0.8; }
+
+    /* ─────────────────────────────
+       TAB 3: アイデア
+    ───────────────────────────── */
+    .idea-section { padding: 20px 16px; }
+    .api-notice {
+      background: #fffbeb; border: 1px solid #f6e05e;
+      border-radius: 12px; padding: 12px 14px;
+      font-size: 13px; color: #744210; margin-bottom: 18px;
+      display: none; line-height: 1.5;
+    }
+    .api-notice.show { display: block; }
+
+    .idea-buttons { display: flex; flex-direction: column; gap: 12px; margin-bottom: 22px; }
+    .idea-btn {
+      padding: 18px 18px; border-radius: 16px; border: none;
+      cursor: pointer; text-align: left; display: flex; align-items: center; gap: 14px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      transition: transform 0.1s; user-select: none;
+    }
+    .idea-btn:active { transform: scale(0.98); }
+    .idea-btn.loading { opacity: 0.6; pointer-events: none; }
+    .idea-icon { font-size: 28px; flex-shrink: 0; }
+    .idea-title { font-size: 16px; font-weight: 700; margin-bottom: 3px; }
+    .idea-sub   { font-size: 12px; opacity: 0.75; }
+    .btn-biz    { background: linear-gradient(135deg, #ede9fe, #ddd6fe); color: #4c1d95; }
+    .btn-light  { background: linear-gradient(135deg, #dcfce7, #bbf7d0); color: #14532d; }
+    .btn-pres   { background: linear-gradient(135deg, #fef9c3, #fde68a); color: #713f12; }
+
+    .result-box {
+      background: white; border-radius: 16px; padding: 18px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08); display: none;
+    }
+    .result-box.show { display: block; }
+    .result-title {
+      font-size: 14px; font-weight: 700; color: #4a5568;
+      padding-bottom: 10px; border-bottom: 1px solid #e2e8f0; margin-bottom: 12px;
+    }
+    .result-body {
+      font-size: 14px; line-height: 1.8; color: #2d3748; white-space: pre-wrap;
+    }
+    .loading-text {
+      text-align: center; color: #a0aec0; font-size: 14px; padding: 12px 0;
+    }
+    .error-text {
+      color: #e53e3e; font-size: 13px; text-align: center; line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ヘッダー -->
+  <div class="header">
+    <h1>🏥 デイケア プログラム</h1>
+    <button class="settings-btn" onclick="openSettings()">⚙️ API設定</button>
+  </div>
+
+  <!-- API キーモーダル -->
+  <div class="modal-overlay" id="settingsModal">
+    <div class="modal">
+      <h2>🔑 Gemini APIキー設定</h2>
+      <p>「アイデア」タブの機能を使うために必要です。設定するとこの端末に保存されます。</p>
+      <input type="password" id="apiKeyInput" placeholder="AIza..." autocomplete="off" />
+      <div class="modal-buttons">
+        <button class="btn-secondary" onclick="closeSettings()">キャンセル</button>
+        <button class="btn-primary" onclick="saveSettings()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- タブバー -->
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="showTab('list', this)">📋 作業リスト</button>
+    <button class="tab-btn" onclick="showTab('deco', this)">🎨 壁面装飾</button>
+    <button class="tab-btn" onclick="showTab('idea', this)">💡 アイデア</button>
+  </div>
+
+  <!-- TAB 1: 作業リスト -->
+  <div id="tab-list" class="tab-panel active">
+    <div class="filters">
+      <div class="filter-label">カテゴリ</div>
+      <div class="filter-chips">
+        <div class="chip active" data-cat="すべて"      onclick="selectCat('すべて')">すべて</div>
+        <div class="chip"        data-cat="清掃・整理"  onclick="selectCat('清掃・整理')">清掃・整理</div>
+        <div class="chip"        data-cat="書類・事務"  onclick="selectCat('書類・事務')">書類・事務</div>
+        <div class="chip"        data-cat="備品・道具"  onclick="selectCat('備品・道具')">備品・道具</div>
+        <div class="chip"        data-cat="制作・クラフト" onclick="selectCat('制作・クラフト')">制作・クラフト</div>
+        <div class="chip"        data-cat="PC作業"      onclick="selectCat('PC作業')">PC作業</div>
+      </div>
+      <div class="filter-label">人数</div>
+      <div class="toggle-row">
+        <button class="toggle-btn active" data-par="すべて"  onclick="selectPar('すべて', this)">すべて</button>
+        <button class="toggle-btn"        data-par="全員"    onclick="selectPar('全員', this)">👥 全員向け</button>
+        <button class="toggle-btn"        data-par="少人数"  onclick="selectPar('少人数', this)">👤 少人数向け</button>
+      </div>
+    </div>
+    <div class="task-list">
+      <div class="task-count" id="taskCount"></div>
+      <div id="taskCards"></div>
+    </div>
+  </div>
+
+  <!-- TAB 2: 壁面装飾 -->
+  <div id="tab-deco" class="tab-panel">
+    <div class="deco-section">
+      <div class="section-title">季節の壁面装飾</div>
+      <div class="section-desc">季節ボタンを押すとランダムにアイデアを提案します。<br>何度でも押せます。</div>
+      <div class="season-grid">
+        <button class="season-btn spring" onclick="spin('春')">🌸<span class="season-label">春</span></button>
+        <button class="season-btn summer" onclick="spin('夏')">🌻<span class="season-label">夏</span></button>
+        <button class="season-btn autumn" onclick="spin('秋')">🍂<span class="season-label">秋</span></button>
+        <button class="season-btn winter" onclick="spin('冬')">❄️<span class="season-label">冬</span></button>
+      </div>
+      <div class="slot-box" id="slotBox">
+        <div class="slot-idle">季節を選んでください</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 3: アイデア -->
+  <div id="tab-idea" class="tab-panel">
+    <div class="idea-section">
+      <div class="section-title">新しいアイデアを探す</div>
+      <div class="section-desc">カテゴリを押すとAIがプログラムのアイデアを提案します。</div>
+      <div class="api-notice show" id="apiNotice">
+        ⚠️ APIキーが設定されていません。右上の ⚙️ API設定 から入力してください。
+      </div>
+      <div class="idea-buttons">
+        <button class="idea-btn btn-biz" onclick="getIdeas('ビジネス', this)">
+          <span class="idea-icon">💼</span>
+          <div>
+            <div class="idea-title">ビジネス</div>
+            <div class="idea-sub">新入社員・パートがやるような仕事</div>
+          </div>
+        </button>
+        <button class="idea-btn btn-light" onclick="getIdeas('軽作業', this)">
+          <span class="idea-icon">📦</span>
+          <div>
+            <div class="idea-title">軽作業</div>
+            <div class="idea-sub">仕分け・整理・清掃など体を使う作業</div>
+          </div>
+        </button>
+        <button class="idea-btn btn-pres" onclick="getIdeas('プレゼン', this)">
+          <span class="idea-icon">📊</span>
+          <div>
+            <div class="idea-title">プレゼン</div>
+            <div class="idea-sub">調べてまとめる研修テーマ</div>
+          </div>
+        </button>
+      </div>
+      <div class="result-box" id="resultBox">
+        <div class="result-title" id="resultTitle"></div>
+        <div class="result-body" id="resultBody"></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+// =====================
+// データ
+// =====================
+const TASKS = [
+  // 清掃・整理系
+  { name: "冷蔵庫の中の整理・拭き掃除",            cat: "清掃・整理",   par: "少人数", note: "" },
+  { name: "本棚コーナーの拭き掃除・整頓",           cat: "清掃・整理",   par: "全員",   note: "" },
+  { name: "倉庫の整理整頓",                         cat: "清掃・整理",   par: "全員",   note: "" },
+  { name: "アート材料棚の整理・拭き掃除",           cat: "清掃・整理",   par: "全員",   note: "" },
+  { name: "ロッカーの拭き掃除",                     cat: "清掃・整理",   par: "全員",   note: "" },
+  { name: "椅子・テーブル脚の拭き掃除（5F大部屋）", cat: "清掃・整理",   par: "全員",   note: "" },
+  { name: "椅子・テーブル脚の拭き掃除（5F小部屋）", cat: "清掃・整理",   par: "全員",   note: "" },
+  { name: "椅子・テーブル脚の拭き掃除（4F）",       cat: "清掃・整理",   par: "全員",   note: "" },
+  { name: "ブラインドの拭き掃除",                   cat: "清掃・整理",   par: "全員",   note: "" },
+  { name: "照明カバーのほこり拭き",                 cat: "清掃・整理",   par: "少人数", note: "⚠ 高所作業あり" },
+  { name: "窓サッシの掃き掃除",                     cat: "清掃・整理",   par: "全員",   note: "" },
+  { name: "ゴミ箱の拭き掃除",                       cat: "清掃・整理",   par: "全員",   note: "" },
+  // 書類・事務系
+  { name: "パンフレットのホチキスまとめ",           cat: "書類・事務",   par: "少人数", note: "" },
+  { name: "書類の補充・セット",                     cat: "書類・事務",   par: "少人数", note: "" },
+  { name: "掲示物のラミネート加工",                 cat: "書類・事務",   par: "少人数", note: "" },
+  // 備品・道具系
+  { name: "色鉛筆を削る",                           cat: "備品・道具",   par: "全員",   note: "" },
+  { name: "クレヨンをきれいにする",                 cat: "備品・道具",   par: "全員",   note: "" },
+  { name: "アートの在庫確認",                       cat: "備品・道具",   par: "少人数", note: "" },
+  { name: "カードを拭く",                           cat: "備品・道具",   par: "全員",   note: "ボードゲームのカード" },
+  // 制作・クラフト系
+  { name: "封筒づくり",                             cat: "制作・クラフト", par: "全員", note: "" },
+  { name: "紙袋づくり",                             cat: "制作・クラフト", par: "全員", note: "" },
+  { name: "ボードゲームづくり",                     cat: "制作・クラフト", par: "全員", note: "⚠ 事前にスタッフがゲーム内容・材料を準備" },
+  { name: "デイケア紹介ポスターづくり",             cat: "制作・クラフト", par: "全員", note: "" },
+  // PC作業系
+  { name: "プログラム紹介ポスター修正",             cat: "PC作業",       par: "少人数", note: "" },
+  { name: "デイケア新聞作成",                       cat: "PC作業",       par: "少人数", note: "" },
+];
+
+const DECO = {
+  春: ["桜の花びら散らし", "タンポポ", "蝶々ならべ", "こいのぼり", "チューリップ", "梅の花", "うぐいす", "春のコラージュ"],
+  夏: ["ひまわり畑", "金魚・魚の飾り", "七夕の天の川", "ヤシの木・南国風", "花火", "朝顔", "スイカ", "セミ・カブトムシ", "夏のコラージュ"],
+  秋: ["紅葉の葉っぱ", "ハロウィンかぼちゃ", "満月とススキ", "どんぐり", "きのこ", "ぶどう・柿", "落ち葉", "秋のコラージュ"],
+  冬: ["雪の結晶", "クリスマスツリー", "お正月・門松・富士山", "雪だるま", "節分・鬼", "バレンタイン", "冬の星座", "冬のコラージュ"],
+};
+
+const PROMPTS = {
+  ビジネス: `精神科デイケアの社会復帰プログラムで実施できる、新入社員やパートの方が職場でやるような実用的な仕事を5つ提案してください。60分以内でできて、6〜18人が参加でき、折り紙・コピー用紙・パソコン・プリンター・文房具などの道具で実施でき、達成感が得られるものです。
+作業名を【】で囲み、その下に2〜3行の説明を書いてください。`,
+
+  軽作業: `精神科デイケアの社会復帰プログラムで実施できる軽作業を5つ提案してください。仕分け・整理・清掃など体を使う作業で、60分以内でできて、6〜18人が参加でき、文房具・清掃用具程度の道具で実施でき、達成感が得られるものです。
+作業名を【】で囲み、その下に2〜3行の説明を書いてください。`,
+
+  プレゼン: `新入社員研修でやるような「調べてまとめて発表する」テーマを5つ提案してください。精神科デイケアの社会復帰プログラムで、パソコンで調べてPowerPointや資料にまとめ発表できるテーマです。難しすぎず60分程度でまとめられるものが望ましいです。
+テーマ名を【】で囲み、その下に何を調べるかの説明を2〜3行で書いてください。`,
+};
+
+// =====================
+// 状態
+// =====================
+let currentCat = "すべて";
+let currentPar = "すべて";
+let apiKey = localStorage.getItem("geminiApiKey") || "";
+let spinId = 0;
+let spinning = false;
+
+// =====================
+// 初期化
+// =====================
+window.addEventListener("DOMContentLoaded", () => {
+  renderTasks();
+  updateApiNotice();
+});
+
+// =====================
+// タブ切替
+// =====================
+function showTab(name, btn) {
+  document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+  document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+  document.getElementById("tab-" + name).classList.add("active");
+  btn.classList.add("active");
+}
+
+// =====================
+// API設定
+// =====================
+function openSettings() {
+  document.getElementById("apiKeyInput").value = apiKey;
+  document.getElementById("settingsModal").classList.add("active");
+}
+function closeSettings() {
+  document.getElementById("settingsModal").classList.remove("active");
+}
+function saveSettings() {
+  apiKey = document.getElementById("apiKeyInput").value.trim();
+  localStorage.setItem("geminiApiKey", apiKey);
+  closeSettings();
+  updateApiNotice();
+}
+function updateApiNotice() {
+  document.getElementById("apiNotice").classList.toggle("show", !apiKey);
+}
+
+// =====================
+// 作業リスト
+// =====================
+function renderTasks() {
+  const filtered = TASKS.filter(t =>
+    (currentCat === "すべて" || t.cat === currentCat) &&
+    (currentPar === "すべて" || t.par === currentPar)
+  );
+  document.getElementById("taskCount").textContent = `${filtered.length} 件`;
+  const el = document.getElementById("taskCards");
+  if (!filtered.length) {
+    el.innerHTML = '<div class="no-results">該当する作業がありません</div>';
+    return;
+  }
+  el.innerHTML = filtered.map(t => `
+    <div class="task-card">
+      <div class="task-name">${t.name}</div>
+      <div class="task-badges">
+        <span class="badge badge-${t.cat}">${t.cat}</span>
+        <span class="badge badge-${t.par}">${t.par === "全員" ? "👥 全員向け" : "👤 少人数向け"}</span>
+      </div>
+      ${t.note ? `<div class="task-note">${t.note}</div>` : ""}
+    </div>
+  `).join("");
+}
+
+function selectCat(cat) {
+  currentCat = cat;
+  document.querySelectorAll(".chip").forEach(c =>
+    c.classList.toggle("active", c.dataset.cat === cat)
+  );
+  renderTasks();
+}
+
+function selectPar(par, btn) {
+  currentPar = par;
+  document.querySelectorAll(".toggle-btn").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  renderTasks();
+}
+
+// =====================
+// 壁面装飾スロット
+// =====================
+function spin(season) {
+  if (spinning) return;
+  spinning = true;
+  const id = ++spinId;
+  const items = DECO[season];
+  const box = document.getElementById("slotBox");
+  const finalItem = items[Math.floor(Math.random() * items.length)];
+
+  box.innerHTML = `<div class="slot-cycling" id="slotCycle">&nbsp;</div>`;
+
+  // 速度スケジュール（ms）: 最初は速く、だんだん遅く
+  const schedule = [55,55,65,65,80,80,100,120,150,190,240,300,380,470,560,660,770];
+  let step = 0;
+
+  function tick() {
+    if (id !== spinId) return; // 別のスピンが始まった
+    const el = document.getElementById("slotCycle");
+    if (!el) return;
+
+    if (step < schedule.length) {
+      el.textContent = items[step % items.length];
+      setTimeout(tick, schedule[step]);
+      step++;
+    } else {
+      // 最終結果
+      box.innerHTML = `
+        <div class="slot-result">🎯 ${finalItem}</div>
+        <div class="slot-sub">${season}の装飾・コラージュ</div>
+        <button class="retry-btn" onclick="spin('${season}')">もう一度</button>
+      `;
+      spinning = false;
+    }
+  }
+  tick();
+}
+
+// =====================
+// Gemini API
+// =====================
+async function getIdeas(type, btn) {
+  if (!apiKey) {
+    document.getElementById("apiNotice").classList.add("show");
+    return;
+  }
+
+  const box   = document.getElementById("resultBox");
+  const title = document.getElementById("resultTitle");
+  const body  = document.getElementById("resultBody");
+
+  box.classList.add("show");
+  title.textContent = `💡 ${type}のアイデア`;
+  body.innerHTML = '<div class="loading-text">考え中…</div>';
+
+  // ボタンを一時無効化
+  document.querySelectorAll(".idea-btn").forEach(b => b.classList.add("loading"));
+
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: PROMPTS[type] }] }]
+        })
+      }
+    );
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error?.message || `HTTP ${res.status}`);
+    }
+
+    const data = await res.json();
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!text) throw new Error("レスポンスが空でした");
+
+    body.textContent = text;
+
+  } catch (e) {
+    body.innerHTML = `<div class="error-text">⚠️ ${e.message}<br>APIキーや通信状況をご確認ください。</div>`;
+  } finally {
+    document.querySelectorAll(".idea-btn").forEach(b => b.classList.remove("loading"));
+  }
+}
+</script>
+</body>
+</html>
