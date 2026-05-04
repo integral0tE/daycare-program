@@ -30,59 +30,6 @@
       box-shadow: 0 2px 8px rgba(0,0,0,0.15);
     }
     .header h1 { font-size: 17px; font-weight: 700; letter-spacing: 0.3px; }
-    .settings-btn {
-      background: rgba(255,255,255,0.2);
-      border: none;
-      color: white;
-      border-radius: 8px;
-      padding: 7px 12px;
-      font-size: 13px;
-      cursor: pointer;
-      font-weight: 600;
-    }
-    .settings-btn:active { opacity: 0.7; }
-
-    /* ── API キーモーダル ── */
-    .modal-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.5);
-      z-index: 300;
-      align-items: center;
-      justify-content: center;
-    }
-    .modal-overlay.active { display: flex; }
-    .modal {
-      background: white;
-      border-radius: 18px;
-      padding: 24px;
-      width: 88%;
-      max-width: 380px;
-    }
-    .modal h2 { font-size: 16px; margin-bottom: 6px; }
-    .modal p { font-size: 13px; color: #718096; margin-bottom: 14px; }
-    .modal input {
-      width: 100%;
-      border: 1.5px solid #e2e8f0;
-      border-radius: 10px;
-      padding: 11px 12px;
-      font-size: 14px;
-      margin-bottom: 14px;
-      outline: none;
-    }
-    .modal input:focus { border-color: #5b8dd9; }
-    .modal-buttons { display: flex; gap: 10px; }
-    .btn-primary {
-      flex: 1; background: #5b8dd9; color: white; border: none;
-      border-radius: 10px; padding: 11px; font-size: 14px;
-      font-weight: 700; cursor: pointer;
-    }
-    .btn-secondary {
-      flex: 1; background: #edf2f7; color: #4a5568; border: none;
-      border-radius: 10px; padding: 11px; font-size: 14px;
-      font-weight: 600; cursor: pointer;
-    }
 
     /* ── タブバー ── */
     .tab-bar {
@@ -227,32 +174,12 @@
       transition: transform 0.1s; user-select: none;
     }
     .idea-btn:active { transform: scale(0.98); }
-    .idea-btn.loading { opacity: 0.6; pointer-events: none; }
     .idea-icon { font-size: 28px; flex-shrink: 0; }
     .idea-title { font-size: 16px; font-weight: 700; margin-bottom: 3px; }
     .idea-sub   { font-size: 12px; opacity: 0.75; }
     .btn-biz    { background: linear-gradient(135deg, #ede9fe, #ddd6fe); color: #4c1d95; }
     .btn-light  { background: linear-gradient(135deg, #dcfce7, #bbf7d0); color: #14532d; }
     .btn-pres   { background: linear-gradient(135deg, #fef9c3, #fde68a); color: #713f12; }
-
-    .result-box {
-      background: white; border-radius: 16px; padding: 18px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08); display: none;
-    }
-    .result-box.show { display: block; }
-    .result-title {
-      font-size: 14px; font-weight: 700; color: #4a5568;
-      padding-bottom: 10px; border-bottom: 1px solid #e2e8f0; margin-bottom: 12px;
-    }
-    .result-body {
-      font-size: 14px; line-height: 1.8; color: #2d3748; white-space: pre-wrap;
-    }
-    .loading-text {
-      text-align: center; color: #a0aec0; font-size: 14px; padding: 12px 0;
-    }
-    .error-text {
-      color: #e53e3e; font-size: 13px; text-align: center; line-height: 1.6;
-    }
   </style>
 </head>
 <body>
@@ -260,20 +187,6 @@
   <!-- ヘッダー -->
   <div class="header">
     <h1>🏥 デイケア プログラム</h1>
-    <button class="settings-btn" onclick="openSettings()">⚙️ API設定</button>
-  </div>
-
-  <!-- API キーモーダル -->
-  <div class="modal-overlay" id="settingsModal">
-    <div class="modal">
-      <h2>🔑 Gemini APIキー設定</h2>
-      <p>「アイデア」タブの機能を使うために必要です。設定するとこの端末に保存されます。</p>
-      <input type="password" id="apiKeyInput" placeholder="AIza..." autocomplete="off" />
-      <div class="modal-buttons">
-        <button class="btn-secondary" onclick="closeSettings()">キャンセル</button>
-        <button class="btn-primary" onclick="saveSettings()">保存</button>
-      </div>
-    </div>
   </div>
 
   <!-- タブバー -->
@@ -329,36 +242,29 @@
   <div id="tab-idea" class="tab-panel">
     <div class="idea-section">
       <div class="section-title">新しいアイデアを探す</div>
-      <div class="section-desc">カテゴリを押すとAIがプログラムのアイデアを提案します。</div>
-      <div class="api-notice show" id="apiNotice">
-        ⚠️ APIキーが設定されていません。右上の ⚙️ API設定 から入力してください。
-      </div>
+      <div class="section-desc">カテゴリを押すとGoogleで検索します。</div>
       <div class="idea-buttons">
-        <button class="idea-btn btn-biz" onclick="getIdeas('ビジネス', this)">
+        <button class="idea-btn btn-biz" onclick="openSearch('就労支援 ビジネスマナー 軽作業 プログラム アイデア')">
           <span class="idea-icon">💼</span>
           <div>
             <div class="idea-title">ビジネス</div>
             <div class="idea-sub">新入社員・パートがやるような仕事</div>
           </div>
         </button>
-        <button class="idea-btn btn-light" onclick="getIdeas('軽作業', this)">
+        <button class="idea-btn btn-light" onclick="openSearch('作業所 軽作業 内職 アイデア')">
           <span class="idea-icon">📦</span>
           <div>
             <div class="idea-title">軽作業</div>
             <div class="idea-sub">仕分け・整理・清掃など体を使う作業</div>
           </div>
         </button>
-        <button class="idea-btn btn-pres" onclick="getIdeas('プレゼン', this)">
+        <button class="idea-btn btn-pres" onclick="openSearch('新入社員 研修 プレゼン テーマ 簡単 アイデア')">
           <span class="idea-icon">📊</span>
           <div>
             <div class="idea-title">プレゼン</div>
             <div class="idea-sub">調べてまとめる研修テーマ</div>
           </div>
         </button>
-      </div>
-      <div class="result-box" id="resultBox">
-        <div class="result-title" id="resultTitle"></div>
-        <div class="result-body" id="resultBody"></div>
       </div>
     </div>
   </div>
@@ -423,7 +329,6 @@ const PROMPTS = {
 // =====================
 let currentCat = "すべて";
 let currentPar = "すべて";
-let apiKey = localStorage.getItem("geminiApiKey") || "";
 let spinId = 0;
 let spinning = false;
 
@@ -432,7 +337,6 @@ let spinning = false;
 // =====================
 window.addEventListener("DOMContentLoaded", () => {
   renderTasks();
-  updateApiNotice();
 });
 
 // =====================
@@ -446,23 +350,10 @@ function showTab(name, btn) {
 }
 
 // =====================
-// API設定
+// Google検索
 // =====================
-function openSettings() {
-  document.getElementById("apiKeyInput").value = apiKey;
-  document.getElementById("settingsModal").classList.add("active");
-}
-function closeSettings() {
-  document.getElementById("settingsModal").classList.remove("active");
-}
-function saveSettings() {
-  apiKey = document.getElementById("apiKeyInput").value.trim();
-  localStorage.setItem("geminiApiKey", apiKey);
-  closeSettings();
-  updateApiNotice();
-}
-function updateApiNotice() {
-  document.getElementById("apiNotice").classList.toggle("show", !apiKey);
+function openSearch(query) {
+  window.open("https://www.google.com/search?q=" + encodeURIComponent(query), "_blank");
 }
 
 // =====================
@@ -545,55 +436,6 @@ function spin(season) {
   tick();
 }
 
-// =====================
-// Gemini API
-// =====================
-async function getIdeas(type, btn) {
-  if (!apiKey) {
-    document.getElementById("apiNotice").classList.add("show");
-    return;
-  }
-
-  const box   = document.getElementById("resultBox");
-  const title = document.getElementById("resultTitle");
-  const body  = document.getElementById("resultBody");
-
-  box.classList.add("show");
-  title.textContent = `💡 ${type}のアイデア`;
-  body.innerHTML = '<div class="loading-text">考え中…</div>';
-
-  // ボタンを一時無効化
-  document.querySelectorAll(".idea-btn").forEach(b => b.classList.add("loading"));
-
-  try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: PROMPTS[type] }] }]
-        })
-      }
-    );
-
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error?.message || `HTTP ${res.status}`);
-    }
-
-    const data = await res.json();
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!text) throw new Error("レスポンスが空でした");
-
-    body.textContent = text;
-
-  } catch (e) {
-    body.innerHTML = `<div class="error-text">⚠️ ${e.message}<br>APIキーや通信状況をご確認ください。</div>`;
-  } finally {
-    document.querySelectorAll(".idea-btn").forEach(b => b.classList.remove("loading"));
-  }
-}
 </script>
 </body>
 </html>
